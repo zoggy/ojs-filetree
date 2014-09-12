@@ -54,7 +54,7 @@ fi
 SHARE_DIR=$datadir
 
 
-PACKAGES=yojson,websocket,js_of_ocaml,ppx_deriving_yojson
+PACKAGES=yojson,websocket,js_of_ocaml,ppx_deriving,ppx_deriving_yojson
 
 #############################
 # substitutions to perform

@@ -31,9 +31,9 @@ include master.Makefile
 P=#p -p
 PBYTE=#p -p a
 
-OF_FLAGS=-package $(PACKAGES),$(SERVER_PACKAGES)
+OF_FLAGS=-package $(PACKAGES)
 
-COMPFLAGS=-I +ocamldoc -annot -g -thread  #-w +K
+COMPFLAGS=-I +ocamldoc -annot -g -thread -verbose #-w +K
 OCAMLPP=
 
 RM=rm -f
@@ -80,6 +80,8 @@ $(LIBJS): $(LIBJS_CMIFILES) $(LIBJS_CMOFILES)
 ##########
 .PHONY: doc webdoc ocamldoc
 
+doc:
+	$(OCAMLFIND) ocamldoc -d ocamldoc -html $(OF_FLAGS) -verbose  ojsft_*.ml
 
 ##########
 install: install-lib
