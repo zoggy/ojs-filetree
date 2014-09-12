@@ -1,0 +1,72 @@
+version = "@VERSION@"
+description = "Stog"
+requires = "@PACKAGES@"
+archive(byte) = "stog.cma"
+archive(native) = "stog.cmxa"
+archive(plugin,byte) = "stog.cma"
+archive(plugin,native) = "stog.cmxs"
+
+package "disqus" (
+  version = "@VERSION@"
+  description = "Stog disqus plugin"
+  archive(byte) = "stog_disqus.cmo"
+  archive(native) = "stog_disqus.cmx"
+  archive(plugin,byte) = "stog_disqus.cmo"
+  archive(plugin,native) = "stog_disqus.cmxs"
+)
+
+package "markdown" (
+  version = "@VERSION@"
+  description = "Stog markdown plugin"
+  archive(byte) = "stog_markdown.cmo"
+  archive(native) = "stog_markdown.cmx"
+  archive(plugin,byte) = "stog_markdown.cmo"
+  archive(plugin,native) = "stog_markdown.cmxs"
+)
+
+package "asy" (
+  version = "@VERSION@"
+  description = "Stog asymptote plugin"
+  archive(byte) = "stog_asy.cmo"
+  archive(native) = "stog_asy.cmx"
+  archive(plugin,byte) = "stog_asy.cmo"
+  archive(plugin,native) = "stog_asy.cmxs"
+)
+
+package "dot" (
+  version = "@VERSION@"
+  description = "Stog graphviz plugin"
+  archive(byte) = "stog_dot.cmo"
+  archive(native) = "stog_dot.cmx"
+  archive(plugin,byte) = "stog_dot.cmo"
+  archive(plugin,native) = "stog_dot.cmxs"
+)
+
+package "multi-doc" (
+  version = "@VERSION@"
+  description = "Stog multi-document plugin"
+  archive(byte) = "stog_multi_doc.cmo"
+  archive(native) = "stog_multi_doc.cmx"
+  archive(plugin,byte) = "stog_multi_doc.cmo"
+  archive(plugin,native) = "stog_multi_doc.cmxs"
+)
+
+package "rel-href" (
+  version = "@VERSION@"
+  description = "Stog relative href plugin"
+  archive(byte) = "stog_rel_href.cmo"
+  archive(native) = "stog_rel_href.cmx"
+  archive(plugin,byte) = "stog_rel_href.cmo"
+  archive(plugin,native) = "stog_rel_href.cmxs"
+)
+
+package "server" (
+  exists_if = "stog_server.cma"
+  version = "@VERSION@"
+  description = "Stog server"
+  requires = "stog,@SERVER_PACKAGES@"
+  archive(byte) = "stog_server.cma"
+  archive(native) = "stog_server.cmxa"
+  archive(plugin,byte) = "stog_server.cma"
+  archive(plugin,native) = "stog_server.cmxs"
+)
