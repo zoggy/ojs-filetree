@@ -37,7 +37,7 @@ let log s = Firebug.console##log (Js.string s);;
 type tree_config = {
     root_id : string ;
     ws : WebSockets.webSocket Js.t ;
-    on_select : string -> unit ;
+    on_select : id: string -> name: string -> unit ;
   }
 
 let nodes = ref (SMap.empty : string SMap.t)
@@ -57,10 +57,20 @@ let node_by_id id =
 
 let gen_id = let n = ref 0 in fun () -> incr n; Printf.sprintf "ojsftid%d" !n
 
+let set_onclick node f =
+  ignore(Dom_html.addEventListener node
+   Dom_html.Event.click
+     (Dom.handler (fun e -> f e; Js.bool true))
+     (Js.bool true))
+
 let build_from_tree ~id tree_files =
   let doc = Dom_html.document in
   let node = node_by_id id in
   clear_children node ;
+  let cfg =
+    try SMap.find id !file_trees
+    with Not_found -> failwith ("No config for file_tree "^id)
+  in
   let rec insert t = function
     `Dir (s, l) ->
       let label = Filename.basename s in
@@ -68,12 +78,19 @@ let build_from_tree ~id tree_files =
       let div_id = gen_id () in
       div##setAttribute (Js.string "id", Js.string div_id);
       div##setAttribute (Js.string "class", Js.string "ojsft-dir");
+
       let div_subs = doc##createElement (Js.string "div") in
       div_subs##setAttribute (Js.string "id", Js.string (div_id^"subs"));
       div_subs##setAttribute (Js.string "class", Js.string "ojsft-dir-subs");
+
+      let span = doc##createElement (Js.string "span") in
+      span##setAttribute (Js.string "id", Js.string (div_id^"text"));
+      set_onclick span (fun e -> cfg.on_select ~id: div_id ~name: s);
+
       let text = doc##createTextNode (Js.string label) in
       Dom.appendChild t div ;
-      Dom.appendChild div text ;
+      Dom.appendChild div span ;
+      Dom.appendChild span text ;
       Dom.appendChild div div_subs ;
       List.iter (insert div_subs) l
   | `File s ->
@@ -82,9 +99,15 @@ let build_from_tree ~id tree_files =
       let div_id = gen_id () in
       div##setAttribute (Js.string "id", Js.string div_id);
       div##setAttribute (Js.string "class", Js.string "ojsft-file");
+
+      let span = doc##createElement (Js.string "span") in
+      span##setAttribute (Js.string "id", Js.string (div_id^"text"));
+      set_onclick span (fun e -> cfg.on_select ~id: div_id ~name: s);
+
       let text = doc##createTextNode (Js.string label) in
       Dom.appendChild t div ;
-      Dom.appendChild div text
+      Dom.appendChild div span ;
+      Dom.appendChild span text
   in
   List.iter (insert node) tree_files
 
@@ -128,7 +151,7 @@ let setup_ws id url =
 ;;
 
 
-let start ?(on_select=fun _ -> ()) ~id url =
+let start ?(on_select=fun ~id ~name -> ()) ~id url =
   match setup_ws id url with
     None -> failwith ("Could not connect to "^url)
   | Some ws ->
