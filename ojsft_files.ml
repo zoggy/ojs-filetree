@@ -28,36 +28,37 @@
 
 (** *)
 
-(** All paths should relative to root directory. *)
-type path = string
+module Find = Ojsft_find
 
-type file_tree = [
- | `Dir of string * file_tree list
- | `File of string
- ] [@@deriving Yojson]
+let is_dir file = (Unix.stat file).Unix.st_kind = Unix.S_DIR
 
-type server_msg = [
-    `Ojsft_msg of string *
-      [
-      | `Error of string
-      | `Tree of file_tree list
-      | `Add_file of string
-      | `Add_dir of string
-      | `Del_file of string
-      | `Del_dir of string
-      | `Rename of string * string
+let rec file_trees_of_dir pred_ign dir =
+  let len = String.length dir in
+  let entries =
+    Find.find_list
+      Find.Stderr
+      [dir]
+      [ Find.Maxdepth 1 ;
+        Find.Predicate pred_ign ;
       ]
-  ]
-  [@@deriving Yojson]
+  in
+  let pred s =
+    s <> dir
+      && (Filename.basename s <> Filename.current_dir_name)
+      && (Filename.basename s <> Filename.parent_dir_name)
+  in
+  let entries = List.filter pred entries in
+  let (dirs, files) = List.partition is_dir entries in
+  let basename s =
+    let len_s = String.length s in
+    if len_s > len then
+      String.sub s len (len_s - len)
+    else
+      failwith ("Invalid file entry: "^s)
+  in
 
-type client_msg = [
-    `Ojsft_msg of string *
-      [
-      | `Get_tree
-      | `Add_file of string
-      | `Add_dir of string
-      | `Del_file of string
-      | `Del_dir of string
-      | `Rename of string * string
-      ]
-  ] [@@deriving Yojson]
+  let dir s = `Dir (basename s, file_trees_of_dir pred_ign s) in
+  let file s = `File (basename s) in
+  (List.map dir dirs) @ (List.map file files)
+
+

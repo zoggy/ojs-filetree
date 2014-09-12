@@ -67,6 +67,17 @@ PACKAGES=@PACKAGES@
 #################
 .SUFFIXES: .mli .ml .cmi .cmo .cmx
 
+
+JSOC_SYNTAX=-package js_of_ocaml.syntax -syntax camlp4o
+%_js.cmi:%_js.mli
+	$(OCAMLFIND) ocamlc$(PBYTE) $(OF_FLAGS) $(OCAMLPP) $(COMPFLAGS) -c $(JSOC_SYNTAX) $<
+
+%_js.cmo:%_js.ml
+	$(OCAMLFIND) ocamlc$(PBYTE) $(OF_FLAGS) $(OCAMLPP) $(COMPFLAGS) -c $(JSOC_SYNTAX) $<
+
+%_js.cmi %_js.cmo:%_js.ml
+	$(OCAMLFIND) ocamlc$(PBYTE) $(OF_FLAGS) $(OCAMLPP) $(COMPFLAGS) -c $(JSOC_SYNTAX) $<
+
 %.cmi:%.mli
 	$(OCAMLFIND) ocamlc$(PBYTE) $(OF_FLAGS) $(OCAMLPP) $(COMPFLAGS) -c $<
 
@@ -87,6 +98,8 @@ PACKAGES=@PACKAGES@
 
 %.mli %.ml:%.mly
 	$(OCAMLYACC) -v $<
+
+
 # some common targets :
 #######################
 first:all

@@ -28,36 +28,45 @@
 
 (** *)
 
-(** All paths should relative to root directory. *)
-type path = string
+let (>>=) = Lwt.bind
+let rec wait_forever () = Lwt_unix.sleep 1000.0 >>= wait_forever
 
-type file_tree = [
- | `Dir of string * file_tree list
- | `File of string
- ] [@@deriving Yojson]
+module J = Yojson.Safe
 
-type server_msg = [
-    `Ojsft_msg of string *
-      [
-      | `Error of string
-      | `Tree of file_tree list
-      | `Add_file of string
-      | `Add_dir of string
-      | `Del_file of string
-      | `Del_dir of string
-      | `Rename of string * string
-      ]
-  ]
-  [@@deriving Yojson]
+let send_msg push id msg =
+  let msg = `Ojsft_msg (id, msg) in
+  let json = J.to_string (Ojsft_types.server_msg_to_yojson msg) in
+  let frame = Websocket.Frame.of_string json in
+  Lwt.return (push (Some frame))
 
-type client_msg = [
-    `Ojsft_msg of string *
-      [
-      | `Get_tree
-      | `Add_file of string
-      | `Add_dir of string
-      | `Del_file of string
-      | `Del_dir of string
-      | `Rename of string * string
-      ]
-  ] [@@deriving Yojson]
+let handle_messages root stream push =
+ let f frame =
+    let s = Websocket.Frame.content frame in
+    try
+      let json = J.from_string s in
+      match Ojsft_types.client_msg_of_yojson json with
+        `Error s -> raise (Yojson.Json_error s)
+      | `Ok (`Ojsft_msg (id, t)) ->
+          match t with
+            `Get_tree ->
+              let files = Ojsft_files.file_trees_of_dir
+                (fun _ -> true) root
+              in
+              send_msg push id (`Tree files)
+          | _ -> raise (Yojson.Json_error "Unhandled message")
+    with Yojson.Json_error s ->
+        Lwt.return (prerr_endline s)
+  in
+  Lwt.catch
+    (fun _ -> Lwt_stream.iter_s f stream)
+    (fun _ -> Lwt.return_unit)
+
+
+let handle_con root uri (stream, push) = handle_messages root stream push
+let server root sockaddr = Websocket.establish_server sockaddr (handle_con root)
+
+let run_server root host port =
+  Lwt_io_ext.sockaddr_of_dns host (string_of_int port) >>= fun sa ->
+    Lwt.return (server root sa) >>= fun _ -> wait_forever ()
+
+let _ = Lwt_unix.run (run_server "." "0.0.0.0" 8080)

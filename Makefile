@@ -45,7 +45,9 @@ LIB_A=$(LIB:.cmxa=.a)
 LIB_CMXS=$(LIB:.cmxs)
 LIB_BYTE=$(LIB:.cmxa=.cma)
 
-LIB_CMXFILES=ojsft_types.cmx
+LIB_CMXFILES=ojsft_types.cmx \
+	ojsft_find.cmx \
+	ojsft_files.cmx
 
 LIB_CMOFILES=$(LIB_CMXFILES:.cmx=.cmo)
 LIB_CMIFILES=$(LIB_CMXFILES:.cmx=.cmi)
@@ -75,7 +77,16 @@ $(LIB_BYTE): $(LIB_CMIFILES) $(LIB_CMOFILES)
 	$(OCAMLFIND) ocamlc$(PBYTE) -a -o $@ $(LIB_CMOFILES)
 
 $(LIBJS): $(LIBJS_CMIFILES) $(LIBJS_CMOFILES)
-	$(OCAMLFIND) ocamlc$(PBYTE) -a -o $@ $(LIB_SERVER_CMOFILES)
+	$(OCAMLFIND) ocamlc$(PBYTE) -a -o $@ $(LIBJS_CMOFILES)
+
+.PHONY: example
+example: example-server example.js
+
+example-server: $(LIB) example.cmx
+	$(OCAMLFIND) ocamlopt -o $@ $(OF_FLAGS) -linkpkg $^
+example.js: $(LIBJS) example_js.cmo
+	$(OCAMLFIND) ocamlc -o t.x $^ -package yojson,js_of_ocaml -linkpkg
+	$(JS_OF_OCAML) t.x -o $@
 
 ##########
 .PHONY: doc webdoc ocamldoc
@@ -138,6 +149,9 @@ configure: configure.ac
 .PHONY: clean depend
 
 .depend depend:
-	$(OCAMLFIND) ocamldep ojs*.ml ojs*.mli > .depend
+	$(OCAMLFIND) ocamldep `ls ojs*.ml ojs*.mli | grep -v js.ml`  > .depend
 
 include .depend
+
+############
+

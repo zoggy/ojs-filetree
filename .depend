@@ -1,4 +1,8 @@
-ojs_ft.cmo :
-ojs_ft.cmx :
-ojs_ft_js.cmo :
-ojs_ft_js.cmx :
+ojsft_files.cmo : ojsft_find.cmi
+ojsft_files.cmx : ojsft_find.cmx
+ojsft_find.cmo : ojsft_find.cmi
+ojsft_find.cmx : ojsft_find.cmi
+ojsft_find.cmi :
+ojsft_foo.cmi :
+ojsft_types.cmo :
+ojsft_types.cmx :
