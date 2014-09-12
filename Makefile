@@ -45,7 +45,7 @@ LIB_A=$(LIB:.cmxa=.a)
 LIB_CMXS=$(LIB:.cmxs)
 LIB_BYTE=$(LIB:.cmxa=.cma)
 
-LIB_CMXFILES=
+LIB_CMXFILES=ojsft_types.cmx
 
 LIB_CMOFILES=$(LIB_CMXFILES:.cmx=.cmo)
 LIB_CMIFILES=$(LIB_CMXFILES:.cmx=.cmi)
@@ -53,7 +53,8 @@ LIB_OFILES=$(LIB_CMXFILES:.cmx=.o)
 
 LIBJS=ojs-filetree-js.cma
 
-LIBJS_CMOFILES=
+LIBJS_CMOFILES=ojsft_types.cmo \
+	ojsft_js.cmo
 
 LIBJS_CMIFILES=$(LIBJS_CMOFILES:.cmx=.cmi)
 
