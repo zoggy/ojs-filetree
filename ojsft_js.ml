@@ -37,7 +37,10 @@ let log s = Firebug.console##log (Js.string s);;
 type tree_config = {
     root_id : string ;
     ws : WebSockets.webSocket Js.t ;
+    show_files : bool ;
     on_select : id: string -> name: string -> unit ;
+    on_deselect : id: string -> name: string -> unit ;
+    mutable selected : (string * string) option ;
   }
 
 let nodes = ref (SMap.empty : string SMap.t)
@@ -94,20 +97,23 @@ let build_from_tree ~id tree_files =
       Dom.appendChild div div_subs ;
       List.iter (insert div_subs) l
   | `File s ->
-      let label = Filename.basename s in
-      let div = doc##createElement (Js.string "div") in
-      let div_id = gen_id () in
-      div##setAttribute (Js.string "id", Js.string div_id);
-      div##setAttribute (Js.string "class", Js.string "ojsft-file");
+      if cfg.show_files then
+        begin
+          let label = Filename.basename s in
+          let div = doc##createElement (Js.string "div") in
+          let div_id = gen_id () in
+          div##setAttribute (Js.string "id", Js.string div_id);
+          div##setAttribute (Js.string "class", Js.string "ojsft-file");
 
-      let span = doc##createElement (Js.string "span") in
-      span##setAttribute (Js.string "id", Js.string (div_id^"text"));
-      set_onclick span (fun e -> cfg.on_select ~id: div_id ~name: s);
+          let span = doc##createElement (Js.string "span") in
+          span##setAttribute (Js.string "id", Js.string (div_id^"text"));
+          set_onclick span (fun e -> cfg.on_select ~id: div_id ~name: s);
 
-      let text = doc##createTextNode (Js.string label) in
-      Dom.appendChild t div ;
-      Dom.appendChild div span ;
-      Dom.appendChild span text
+          let text = doc##createTextNode (Js.string label) in
+          Dom.appendChild t div ;
+          Dom.appendChild div span ;
+          Dom.appendChild span text
+        end
   in
   List.iter (insert node) tree_files
 
@@ -151,11 +157,19 @@ let setup_ws id url =
 ;;
 
 
-let start ?(on_select=fun ~id ~name -> ()) ~id url =
+let start
+  ?(show_files=true)
+  ?(on_select=fun ~id ~name -> ())
+  ?(on_deselect=fun ~id ~name -> ()) ~id url =
   match setup_ws id url with
     None -> failwith ("Could not connect to "^url)
   | Some ws ->
-      let cfg = { root_id = id ; ws ; on_select } in
-      file_trees := SMap.add id cfg !file_trees
+      let cfg = {
+            root_id = id ; ws ;
+            on_select ; on_deselect ; show_files ;
+            selected = None ;
+          }
+        in
+        file_trees := SMap.add id cfg !file_trees
 
 

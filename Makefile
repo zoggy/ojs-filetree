@@ -93,7 +93,7 @@ example.js: $(LIBJS) example_js.cmo
 .PHONY: doc webdoc ocamldoc
 
 doc:
-	$(OCAMLFIND) ocamldoc -d ocamldoc -html $(OF_FLAGS) -verbose  ojsft_*.ml
+	$(OCAMLFIND) ocamldoc -d ocamldoc -html $(OF_FLAGS) -verbose  `ls ojsft_*.ml | grep -v _js.ml`
 
 ##########
 install: install-lib
