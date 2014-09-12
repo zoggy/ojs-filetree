@@ -1,3 +1,5 @@
+example-server
+example.js
 ocamldoc
 .chamo*
 *.cm*
@@ -8,6 +10,7 @@ ocamldoc
 autom4te.cache
 config.log
 config.status
+configure.lineno
 META
 master.Makefile
 ocaml_config.sh
