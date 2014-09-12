@@ -47,7 +47,8 @@ LIB_BYTE=$(LIB:.cmxa=.cma)
 
 LIB_CMXFILES=ojsft_types.cmx \
 	ojsft_find.cmx \
-	ojsft_files.cmx
+	ojsft_files.cmx \
+	ojsft_server.cmx
 
 LIB_CMOFILES=$(LIB_CMXFILES:.cmx=.cmo)
 LIB_CMIFILES=$(LIB_CMXFILES:.cmx=.cmi)

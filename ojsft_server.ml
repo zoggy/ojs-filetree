@@ -29,13 +29,49 @@
 (** *)
 
 let (>>=) = Lwt.bind
-let rec wait_forever () = Lwt_unix.sleep 1000.0 >>= wait_forever
 
-let handle_con root uri (stream, push) = Ojsft_server.handle_messages root stream push
-let server root sockaddr = Websocket.establish_server sockaddr (handle_con root)
+module J = Yojson.Safe
 
-let run_server root host port =
-  Lwt_io_ext.sockaddr_of_dns host (string_of_int port) >>= fun sa ->
-    Lwt.return (server root sa) >>= fun _ -> wait_forever ()
+let send_msg push id msg =
+  let msg = `Ojsft_msg (id, msg) in
+  let json = J.to_string (Ojsft_types.server_msg_to_yojson msg) in
+  let frame = Websocket.Frame.of_string json in
+  Lwt.return (push (Some frame))
 
-let _ = Lwt_unix.run (run_server "." "0.0.0.0" 8080)
+let handle_client_msg root push id msg () =
+  match msg with
+    `Get_tree ->
+      let files = Ojsft_files.file_trees_of_dir
+        (fun _ -> true) root
+      in
+      send_msg push id (`Tree files)
+  | _ ->
+      failwith "Unhandled message"
+
+let handle_messages root stream push =
+ let f frame =
+    let s = Websocket.Frame.content frame in
+    try
+      let json = J.from_string s in
+      match Ojsft_types.client_msg_of_yojson json with
+        `Error s -> raise (Yojson.Json_error s)
+      | `Ok (`Ojsft_msg (id, t)) ->
+          Lwt.catch (handle_client_msg root push id t)
+            (fun e ->
+               let msg =
+                 match e with
+                   Failure s | Sys_error s -> s
+                 | _ -> Printexc.to_string e
+                in
+                send_msg push id (`Error msg)
+            )
+    with
+      Yojson.Json_error s ->
+        Lwt.return (prerr_endline s)
+    | e ->
+        Lwt.return (prerr_endline (Printexc.to_string e))
+  in
+  Lwt.catch
+    (fun _ -> Lwt_stream.iter_s f stream)
+    (fun _ -> Lwt.return_unit)
+

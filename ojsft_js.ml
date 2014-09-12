@@ -34,9 +34,15 @@ module SMap = Map.Make(String)
 
 let log s = Firebug.console##log (Js.string s);;
 
+type tree_config = {
+    root_id : string ;
+    ws : WebSockets.webSocket Js.t ;
+    on_select : string -> unit ;
+  }
+
 let nodes = ref (SMap.empty : string SMap.t)
 
-let file_trees = ref (SMap.empty : string SMap.t)
+let file_trees = ref (SMap.empty : tree_config SMap.t)
 
 
 let clear_children node =
@@ -49,6 +55,8 @@ let node_by_id id =
   let node = Dom_html.document##getElementById (Js.string id) in
   Js.Opt.case node (fun _ -> failwith ("No node with id = "^id)) (fun x -> x)
 
+let gen_id = let n = ref 0 in fun () -> incr n; Printf.sprintf "ojsftid%d" !n
+
 let build_from_tree ~id tree_files =
   let doc = Dom_html.document in
   let node = node_by_id id in
@@ -57,14 +65,22 @@ let build_from_tree ~id tree_files =
     `Dir (s, l) ->
       let label = Filename.basename s in
       let div = doc##createElement (Js.string "div") in
+      let div_id = gen_id () in
+      div##setAttribute (Js.string "id", Js.string div_id);
       div##setAttribute (Js.string "class", Js.string "ojsft-dir");
+      let div_subs = doc##createElement (Js.string "div") in
+      div_subs##setAttribute (Js.string "id", Js.string (div_id^"subs"));
+      div_subs##setAttribute (Js.string "class", Js.string "ojsft-dir-subs");
       let text = doc##createTextNode (Js.string label) in
       Dom.appendChild t div ;
       Dom.appendChild div text ;
-      List.iter (insert div) l
+      Dom.appendChild div div_subs ;
+      List.iter (insert div_subs) l
   | `File s ->
       let label = Filename.basename s in
       let div = doc##createElement (Js.string "div") in
+      let div_id = gen_id () in
+      div##setAttribute (Js.string "id", Js.string div_id);
       div##setAttribute (Js.string "class", Js.string "ojsft-file");
       let text = doc##createTextNode (Js.string label) in
       Dom.appendChild t div ;
@@ -102,19 +118,8 @@ let setup_ws id url =
   try
     log ("connecting with websocket to "^url);
     let ws = jsnew WebSockets.webSocket(Js.string url) in
-    (*log "setting binary";
-    ws##binaryType <- Js.string "arraybuffer";*)
     ws##onopen <- Dom.handler (fun _ -> send_msg ws id (`Get_tree); Js._false);
     ws##onclose <- Dom.handler (fun _ -> log "WS now CLOSED"; Js._false);
-    (*log "handler set up";
-    (
-      match ws##readyState with
-        | WebSockets.CONNECTING -> log "CONNECTING"
-        | WebSockets.OPEN -> log "OPEN"
-        | WebSockets.CLOSING -> log "CLOSING"
-        | WebSockets.CLOSED -> log "CLOSED"
-    );
-    *)
     ws##onmessage <- Dom.full_handler (ws_onmessage ws id) ;
     Some ws
   with e ->
@@ -123,6 +128,11 @@ let setup_ws id url =
 ;;
 
 
-let start ~id ~ws =
-   setup_ws id ws
+let start ?(on_select=fun _ -> ()) ~id url =
+  match setup_ws id url with
+    None -> failwith ("Could not connect to "^url)
+  | Some ws ->
+      let cfg = { root_id = id ; ws ; on_select } in
+      file_trees := SMap.add id cfg !file_trees
+
 

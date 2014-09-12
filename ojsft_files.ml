@@ -48,6 +48,7 @@ let rec file_trees_of_dir pred_ign dir =
       && (Filename.basename s <> Filename.parent_dir_name)
   in
   let entries = List.filter pred entries in
+  let entries = List.sort String.compare entries in
   let (dirs, files) = List.partition is_dir entries in
   let basename s =
     let len_s = String.length s in

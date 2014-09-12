@@ -1,3 +1,3 @@
 
 
-let () = ignore(Ojsft_js.start ~id: "ft" ~ws: "ws://localhost:8080")
+let () = ignore(Ojsft_js.start ~id: "ft" "ws://localhost:8080")
