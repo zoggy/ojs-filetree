@@ -16,3 +16,4 @@ div.ojsft-file { font-weight: normal; margin-left: 1em ; }
   border-width: 0 0 0 1px ;
   border-color: #888888 ;
 }
+.selected { background-color: #aaf; }
