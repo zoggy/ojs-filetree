@@ -38,4 +38,4 @@ let run_server root host port =
   Lwt_io_ext.sockaddr_of_dns host (string_of_int port) >>= fun sa ->
     Lwt.return (server root sa) >>= fun _ -> wait_forever ()
 
-let _ = Lwt_unix.run (run_server "." "0.0.0.0" 8080)
+let _ = Lwt_unix.run (run_server (try Sys.argv.(1) with _ -> ".") "0.0.0.0" 8080)
