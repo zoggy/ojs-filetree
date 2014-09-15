@@ -81,6 +81,13 @@ let trees = ref (SMap.empty : tree_info SMap.t)
 let (+=) map (key, v) = map := SMap.add key v !map
 let (-=) map key = map := SMap.remove key !map
 
+
+let send_msg ws id msg =
+  let msg = Yojson.to_string
+    (Ojsft_types.client_msg_to_yojson (`Ojsft_msg (id, msg)))
+  in
+  ws##send (Js.string msg)
+
 let clear_children node =
   let children = node##childNodes in
   for i = 0 to children##length - 1 do
@@ -152,6 +159,37 @@ let set_tree_onclick id node div_id label =
   in
   set_onclick node f
 
+let collapsed_class = "collapsed"
+let expand_buttons base_id subs_id =
+  let doc = Dom_html.document in
+  let id_exp = base_id^"expand" in
+  let id_col = base_id^"collapse" in
+
+  let span_exp = doc##createElement (Js.string "span") in
+  span_exp##setAttribute (Js.string "id", Js.string id_exp);
+  span_exp##className <- Js.string collapsed_class ;
+
+  let span_col = doc##createElement (Js.string "span") in
+  span_col##setAttribute (Js.string "id", Js.string id_col);
+  let t_exp = doc##createTextNode (Js.string " ▶") in
+  let t_col = doc##createTextNode (Js.string " ▼") in
+  Dom.appendChild span_exp t_exp;
+  Dom.appendChild span_col t_col;
+  set_onclick span_exp
+    (fun e ->
+       set_class id_exp collapsed_class ;
+       unset_class id_col collapsed_class ;
+       unset_class subs_id collapsed_class
+    );
+  set_onclick span_col
+    (fun e ->
+       set_class id_col collapsed_class ;
+       unset_class id_exp collapsed_class ;
+       set_class subs_id collapsed_class
+    );
+
+  (span_exp, span_col)
+
 let build_from_tree ~id tree_files =
   let doc = Dom_html.document in
   let node = node_by_id id in
@@ -188,9 +226,13 @@ let build_from_tree ~id tree_files =
       in
       tree_nodes += (div_id, tn) ;
 
+      let (span_exp, span_col) = expand_buttons div_id subs_id in
+
       Dom.appendChild t div ;
       Dom.appendChild div span ;
       Dom.appendChild span text ;
+      Dom.appendChild div span_exp ;
+      Dom.appendChild div span_col ;
       Dom.appendChild div div_subs ;
       List.iter (insert div_subs) l
 
@@ -224,11 +266,6 @@ let build_from_tree ~id tree_files =
   in
   List.iter (insert node) tree_files
 
-let send_msg ws id msg =
-  let msg = Yojson.to_string
-    (Ojsft_types.client_msg_to_yojson (`Ojsft_msg (id, msg)))
-  in
-  ws##send (Js.string msg)
 
 let ws_onmessage ws id _ event =
    try

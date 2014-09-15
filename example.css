@@ -17,3 +17,5 @@ div.ojsft-file { font-weight: normal; margin-left: 1em ; }
   border-color: #888888 ;
 }
 .selected { background-color: #aaf; }
+.collapsed { display: none ; }
+.expanded { display: normal; }
